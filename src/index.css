@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-green-50;
+}
+
+button {
+  @apply p-1 px-2 bg-white border rounded cursor-pointer;
+}
+
+.toggle {
+  @apply fixed overflow-hidden text-xl border-2 border-white rounded shadow bottom-4 right-4;
+
+  button {
+    @apply flex items-center justify-center w-8 h-8 border-none rounded-none;
+
+    &.active {
+      @apply text-white bg-green-600;
+    }
+  }
+}
+
+.no-scrollbar {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
