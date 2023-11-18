@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { openDB, IDBPDatabase } from "idb";
 import { differenceInDays } from "date-fns";
+import { Tooltip } from "react-tooltip";
 
 interface SpendEntry {
   id: number;
   timestamp: Date;
-  amount: number;
+  amount: number | string;
   note?: string;
 }
 
@@ -30,7 +31,7 @@ function App() {
         return a.timestamp.getTime() - b.timestamp.getTime();
       })
       .reduce((p, c) => {
-        return p - c.amount;
+        return p - Number(c.amount);
       }, settings.startAmount + settings.dailyBudget * (differenceInDays(new Date(), settings.startDate) + 1));
   }, [entries, settings]);
 
@@ -85,16 +86,6 @@ function App() {
       const store = tx.objectStore("entries");
       store.getAll().then((v) => {
         setEntries(() => v as SpendEntry[]);
-
-        setTimeout(() => {
-          const ledger = document.getElementById("ledger");
-          if (ledger !== null) {
-            ledger.scrollTo({
-              top: ledger.scrollHeight,
-              behavior: "smooth",
-            });
-          }
-        }, 2000);
       });
 
       const settingsTx = db.transaction("settings", "readwrite");
@@ -124,7 +115,7 @@ function App() {
         className="h-[50vh] w-full bg-white overflow-y-scroll no-scrollbar"
       >
         {entries
-          .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+          .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
           .map((entry) => (
             <div
               key={entry.id}
@@ -134,9 +125,25 @@ function App() {
                 {entry.timestamp.toLocaleString()}
               </span>
 
-              <span className="w-[6em] text-right font-mono text-sm [&::before]:block flex justify-between [&::before]:text-gray-400 [&::before]:content-['$']">
-                {entry.amount.toFixed(2)}
+              <span className="w-[5em] text-right font-mono text-sm [&::before]:block flex justify-between [&::before]:text-gray-400 [&::before]:content-['$']">
+                {Number(entry.amount).toFixed(2)}
               </span>
+
+              {entry.note !== undefined && entry.note.length > 0 ? (
+                <>
+                  <i
+                    data-tooltip-content={entry.note}
+                    data-tooltip-id="my-tooltip"
+                  >
+                    ℹ
+                  </i>
+
+                  <Tooltip id="my-tooltip" />
+                </>
+              ) : (
+                <i></i>
+              )}
+
               <button
                 className="text-sm"
                 onClick={async () => {
@@ -227,20 +234,29 @@ const EntryEditor = ({
   return (
     <div className="flex flex-col gap-2">
       <input
-        type="number"
+        type="text"
         value={entry.amount}
+        placeholder="0.00"
+        className="p-1 font-mono text-lg text-center"
         onChange={(e) => {
+          setEntry((ent) => ({ ...ent, amount: e.target.value }));
+        }}
+        onBlur={(e) => {
           setEntry((ent) => ({ ...ent, amount: Number(e.target.value) }));
         }}
       />
       <input
         type="text"
         value={entry.note}
+        placeholder="note (optional)"
+        className="p-1 text-lg text-center"
         onChange={(e) => {
           setEntry((ent) => ({ ...ent, note: e.target.value }));
         }}
       />
       <button
+        disabled={isNaN(Number(entry.amount))}
+        className="opacity-100 [&:disabled]:opacity-50"
         onClick={() => {
           onNewEntry({ ...entry, timestamp: new Date() });
           setEntry({
