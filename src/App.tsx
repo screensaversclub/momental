@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { openDB, IDBPDatabase } from "idb";
-import { differenceInDays } from "date-fns";
+import { differenceInDays, startOfDay } from "date-fns";
 import { Tooltip } from "react-tooltip";
 
 interface SpendEntry {
@@ -95,14 +95,14 @@ function App() {
           // init settings
           const initSettings = {
             startAmount: 0,
-            startDate: new Date(),
+            startDate: startOfDay(new Date()),
             dailyBudget: 40,
           };
           settingsStore.add(initSettings, "settings").then(() => {
             setSettings(initSettings);
           });
         } else {
-          setSettings(result);
+          setSettings({ ...result, startDate: startOfDay(new Date()) });
         }
       });
     });
@@ -110,6 +110,9 @@ function App() {
 
   return (
     <main className="w-[100vw] overflow-hidden">
+      <div className="bg-[rgba(22,163,74,1)] text-center text-white p-2">
+        ⛰︎
+      </div>
       <div
         id="ledger"
         className="h-[50vh] w-full bg-white overflow-y-scroll no-scrollbar"
@@ -296,12 +299,13 @@ const SettingsEditor = ({
   }, []);
 
   return (
-    <div className="flex flex-col items-start gap-2">
+    <div className="flex flex-col gap-2">
       <div>
-        daily $
         <input
           type="number"
           value={data.dailyBudget}
+          className="w-full p-1 text-lg text-center"
+          placeholder="daily budget"
           onChange={(e) => {
             setData((d) => ({
               ...d,
@@ -312,9 +316,10 @@ const SettingsEditor = ({
       </div>
 
       <div>
-        start $
         <input
+          placeholder="starting amount"
           type="number"
+          className="w-full p-1 text-lg text-center"
           value={data.startAmount}
           onChange={(e) => {
             setData((d) => ({
@@ -324,12 +329,13 @@ const SettingsEditor = ({
           }}
         />
       </div>
-      <div>
-        start{" "}
+      <div className="flex items-center gap-2">
+        <label>start date</label>
         <input
           type="date"
           value={data.startDate.toISOString().substring(0, 10)}
           required={true}
+          className="flex-grow text-lg"
           onChange={(e) => {
             setData((d) => ({
               ...d,
@@ -339,8 +345,12 @@ const SettingsEditor = ({
         />
       </div>
 
+      <div className="text-sm text-center">
+        {differenceInDays(new Date(), settings?.startDate || new Date())} days
+      </div>
+
       <div
-        className="p-1 text-sm bg-white rounded cursor-pointer border-1"
+        className="p-1 text-sm text-center border rounded cursor-pointer border-text border-1"
         onClick={async () => {
           if (!persisted) {
             await navigator.storage.persist();
