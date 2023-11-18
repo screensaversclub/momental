@@ -102,7 +102,7 @@ function App() {
             setSettings(initSettings);
           });
         } else {
-          setSettings({ ...result, startDate: startOfDay(new Date()) });
+          setSettings({ ...result, startDate: startOfDay(result.startDate) });
         }
       });
     });
@@ -339,7 +339,7 @@ const SettingsEditor = ({
           onChange={(e) => {
             setData((d) => ({
               ...d,
-              startDate: new Date(e.target.value),
+              startDate: startOfDay(new Date(e.target.value)),
             }));
           }}
         />
