@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { openDB, IDBPDatabase } from "idb";
 import { differenceInDays, format, startOfDay } from "date-fns";
 import { Tooltip } from "react-tooltip";
@@ -21,6 +28,15 @@ function App() {
   const [entries, setEntries] = useState<SpendEntry[]>([]);
   const [settings, setSettings] = useState<Settings>();
   const [editingSettings, setEditingSettings] = useState(false);
+  const [daysSpanned, firstDate] = useMemo(() => {
+    const dates = entries
+      .map((e) => e.timestamp)
+      .sort((a, b) => b.getTime() - a.getTime());
+    return [
+      differenceInDays(dates[0], dates[dates.length - 1]),
+      dates[dates.length - 1],
+    ];
+  }, [entries]);
 
   const balance = useMemo(() => {
     if (settings === undefined) {
@@ -145,45 +161,65 @@ function App() {
       >
         {entries
           .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-          .map((entry) => (
-            <div
-              key={entry.id}
-              className="flex items-center justify-between px-2 py-1 border-b"
-            >
-              <span className="text-xs text-black/50 w-[6em]">
-                {format(entry.timestamp, "H:mm:ss a")}
-              </span>
+          .map((entry, index, arr) => (
+            <Fragment key={entry.id}>
+              <div
+                key={`entry_${entry.id}`}
+                className="flex items-center justify-between px-2 py-1 border-t"
+              >
+                <span className="text-xs text-black/50 w-[6em]">
+                  {format(entry.timestamp, "H:mm:ss a")}
+                </span>
 
-              <span className="w-[7em] text-right font-mono text-sm [&::before]:block flex justify-between [&::before]:text-gray-400 [&::before]:content-['$']">
-                {Number(entry.amount).toFixed(2)}
-              </span>
+                <span className="w-[7em] text-right font-mono text-sm [&::before]:block flex justify-between [&::before]:text-gray-400 [&::before]:content-['$']">
+                  {Number(entry.amount).toFixed(2)}
+                </span>
 
-              <div className="w-[5em] flex gap-1 justify-end">
-                {entry.note !== undefined && entry.note.length > 0 && (
-                  <>
-                    <i
-                      data-tooltip-content={entry.note}
-                      data-tooltip-id="my-tooltip"
-                      className="flex items-center justify-center w-8 border rounded"
-                    >
-                      i
-                    </i>
+                <div className="w-[5em] flex gap-1 justify-end">
+                  {entry.note !== undefined && entry.note.length > 0 && (
+                    <>
+                      <i
+                        data-tooltip-content={entry.note}
+                        data-tooltip-id="my-tooltip"
+                        className="flex items-center justify-center w-8 border rounded"
+                      >
+                        i
+                      </i>
 
-                    <Tooltip id="my-tooltip" />
-                  </>
-                )}
+                      <Tooltip id="my-tooltip" />
+                    </>
+                  )}
 
-                <button
-                  className="text-sm"
-                  onClick={async () => {
-                    await deleteEntry(entry.id);
-                    await loadEntries();
-                  }}
-                >
-                  &times;
-                </button>
+                  <button
+                    className="text-sm"
+                    onClick={async () => {
+                      await deleteEntry(entry.id);
+                      await loadEntries();
+                    }}
+                  >
+                    &times;
+                  </button>
+                </div>
               </div>
-            </div>
+              <div
+                className={`${
+                  arr?.[index + 1] !== undefined &&
+                  differenceInDays(
+                    startOfDay(entry.timestamp),
+                    startOfDay(arr[index + 1].timestamp)
+                  ) >= 1
+                    ? "block"
+                    : "hidden"
+                } sticky bottom-0 text-center bg-white text-gray-500 text-sm py-2 bg-gradient-to-t from-gray-50 to-white`}
+                style={{
+                  zIndex:
+                    daysSpanned - differenceInDays(firstDate, entry.timestamp),
+                }}
+              >
+                {format(entry.timestamp, "dd MMM yyyy")}/
+                {differenceInDays(firstDate, entry.timestamp)}
+              </div>
+            </Fragment>
           ))}
       </div>
 
