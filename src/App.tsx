@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { openDB, IDBPDatabase } from "idb";
-import { differenceInDays, startOfDay } from "date-fns";
+import { differenceInDays, format, startOfDay } from "date-fns";
 import { Tooltip } from "react-tooltip";
 
 interface SpendEntry {
@@ -109,10 +109,36 @@ function App() {
   }, []);
 
   return (
-    <main className="w-[100vw] overflow-hidden h-[100vh] fixed top-0 left-0">
-      <div className="bg-[#14C31B] h-[40px] text-center text-white p-2 flex justify-center">
-        <img src="/header-logo.png" alt="logo" className="w-8" />
+    <main className="w-[100vw] max-w-[600px] overflow-hidden h-[100vh] fixed top-0 left-[50%] translate-x-[-50%]">
+      <div className="bg-[#14C31B] h-[60px] items-center text-white p-2 flex justify-center relative">
+        <img
+          src="/header-logo.png"
+          alt="logo"
+          className="w-[40px] aspect-[1.5] block"
+        />
+        <div className="absolute left-2 top-[50%] translate-y-[-50%] text-left width-[20em] text-white bg-[#14C31B] h-full flex flex-col justify-center">
+          <h2 className="m-0 p-0 text-xs uppercase leading-[1]">bal:</h2>
+          <span className="font-mono text-sm leading-[1.2]">
+            ${balance.toFixed(2)}
+          </span>
+        </div>
+        <div className="absolute right-2 top-[50%] translate-y-[-50%] text-white">
+          <button
+            type="button"
+            onClick={() => {
+              setEditingSettings((a) => !a);
+            }}
+            className={`${
+              editingSettings
+                ? "bg-white text-[#14C31B]"
+                : "bg-[#14C31B] text-white"
+            } text-[30px] leading-[1] flex items-center justify-center border-none p-0 px-2 w-[40px] h-[40px]`}
+          >
+            ⚙︎
+          </button>
+        </div>
       </div>
+
       <div
         id="ledger"
         className="h-[50vh] w-full bg-white overflow-y-scroll no-scrollbar"
@@ -124,43 +150,44 @@ function App() {
               key={entry.id}
               className="flex items-center justify-between px-2 py-1 border-b"
             >
-              <span className="text-xs">
-                {entry.timestamp.toLocaleString()}
+              <span className="text-xs text-black/50 w-[6em]">
+                {format(entry.timestamp, "H:mm:ss a")}
               </span>
 
-              <span className="w-[5em] text-right font-mono text-sm [&::before]:block flex justify-between [&::before]:text-gray-400 [&::before]:content-['$']">
+              <span className="w-[7em] text-right font-mono text-sm [&::before]:block flex justify-between [&::before]:text-gray-400 [&::before]:content-['$']">
                 {Number(entry.amount).toFixed(2)}
               </span>
 
-              {entry.note !== undefined && entry.note.length > 0 ? (
-                <>
-                  <i
-                    data-tooltip-content={entry.note}
-                    data-tooltip-id="my-tooltip"
-                  >
-                    ℹ
-                  </i>
+              <div className="w-[5em] flex gap-1 justify-end">
+                {entry.note !== undefined && entry.note.length > 0 && (
+                  <>
+                    <i
+                      data-tooltip-content={entry.note}
+                      data-tooltip-id="my-tooltip"
+                      className="flex items-center justify-center w-8 border rounded"
+                    >
+                      i
+                    </i>
 
-                  <Tooltip id="my-tooltip" />
-                </>
-              ) : (
-                <i></i>
-              )}
+                    <Tooltip id="my-tooltip" />
+                  </>
+                )}
 
-              <button
-                className="text-sm"
-                onClick={async () => {
-                  await deleteEntry(entry.id);
-                  await loadEntries();
-                }}
-              >
-                &times;
-              </button>
+                <button
+                  className="text-sm"
+                  onClick={async () => {
+                    await deleteEntry(entry.id);
+                    await loadEntries();
+                  }}
+                >
+                  &times;
+                </button>
+              </div>
             </div>
           ))}
       </div>
 
-      <div className="px-2 py-2 w-full h-[calc(50vh_-_40px)] border-t">
+      <div className="px-2 py-2 w-full h-[calc(50vh_-_60px)] border-t">
         {editingSettings ? (
           settings === undefined ? (
             <>Loading</>
@@ -181,10 +208,6 @@ function App() {
           )
         ) : (
           <div className="flex flex-col gap-2">
-            <div className="p-2 bg-white border rounded">
-              <h2 className="text-xs uppercase">bal:</h2>
-              <span className="font-mono">${balance.toFixed(2)}</span>
-            </div>
             <EntryEditor
               onNewEntry={async (entry) => {
                 if (dbRef.current === undefined) {
@@ -200,25 +223,6 @@ function App() {
           </div>
         )}
       </div>
-
-      <div className="toggle">
-        <button
-          className={editingSettings ? "" : "active"}
-          onClick={() => {
-            setEditingSettings((a) => !a);
-          }}
-        >
-          ⛰︎
-        </button>
-        <button
-          className={!editingSettings ? "" : "active"}
-          onClick={() => {
-            setEditingSettings((a) => !a);
-          }}
-        >
-          ⚙︎
-        </button>
-      </div>
     </main>
   );
 }
@@ -229,18 +233,22 @@ const EntryEditor = ({
   onNewEntry: (entry: Omit<SpendEntry, "id">) => void;
 }) => {
   const [entry, setEntry] = useState<Omit<SpendEntry, "id">>({
-    amount: 0,
+    amount: "",
     timestamp: new Date(),
     note: "",
   });
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col py-4 gap-2">
       <input
         type="text"
         value={entry.amount}
-        placeholder="0.00"
-        className="p-1 font-mono text-lg text-center"
+        aria-label="spend amount"
+        placeholder="Spend amount"
+        className="p-1 font-mono text-lg text-center border border-gray-400"
+        onFocus={(e) => {
+          e.target.value = "";
+        }}
         onChange={(e) => {
           setEntry((ent) => ({ ...ent, amount: e.target.value }));
         }}
@@ -251,25 +259,27 @@ const EntryEditor = ({
       <input
         type="text"
         value={entry.note}
+        aria-label="note for this spend entry"
         placeholder="note (optional)"
-        className="p-1 text-lg text-center"
+        className="p-1 text-lg text-center border border-gray-400"
         onChange={(e) => {
           setEntry((ent) => ({ ...ent, note: e.target.value }));
         }}
       />
       <button
-        disabled={isNaN(Number(entry.amount))}
-        className="opacity-100 [&:disabled]:opacity-50"
+        disabled={isNaN(Number(entry.amount)) || Number(entry.amount) === 0}
+        className="opacity-100 [&:disabled]:opacity-50 bg-[#14C31B] text-white rounded-lg text-lg mt-4 py-2"
+        aria-label="enter new spend"
         onClick={() => {
           onNewEntry({ ...entry, timestamp: new Date() });
           setEntry({
-            amount: 0,
+            amount: "",
             timestamp: new Date(),
             note: "",
           });
         }}
       >
-        Enter
+        New Spend
       </button>
     </div>
   );
@@ -288,7 +298,7 @@ const SettingsEditor = ({
   useEffect(() => {
     const id = setTimeout(() => {
       onUpdate(data);
-    }, 1000);
+    }, 500);
     return () => {
       clearTimeout(id);
     };
