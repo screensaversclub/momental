@@ -110,8 +110,8 @@ function App() {
 
   return (
     <main className="w-[100vw] overflow-hidden">
-      <div className="bg-[rgba(22,163,74,1)] text-center text-white p-2">
-        ⛰︎
+      <div className="bg-[#14C31B] h-[40px] text-center text-white p-2 flex justify-center">
+        <img src="/header-logo.png" alt="logo" className="w-8" />
       </div>
       <div
         id="ledger"
@@ -160,7 +160,7 @@ function App() {
           ))}
       </div>
 
-      <div className="px-2 py-2 w-full h-[50vh] border-t">
+      <div className="px-2 py-2 w-full h-[calc(50vh_-_40px)] border-t">
         {editingSettings ? (
           settings === undefined ? (
             <>Loading</>
@@ -346,7 +346,8 @@ const SettingsEditor = ({
       </div>
 
       <div className="text-sm text-center">
-        {differenceInDays(new Date(), settings?.startDate || new Date())} days
+        {differenceInDays(new Date(), settings?.startDate || new Date()) + 1}{" "}
+        days
       </div>
 
       <div
