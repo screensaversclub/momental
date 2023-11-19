@@ -9,7 +9,7 @@ import {
 import { openDB, IDBPDatabase } from "idb";
 import { differenceInDays, format, startOfDay } from "date-fns";
 import { Tooltip } from "react-tooltip";
-import { Analytics } from "@vercel/analytics";
+import Analytics from "@vercel/analytics";
 
 interface SpendEntry {
   id: number;
