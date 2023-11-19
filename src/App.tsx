@@ -23,9 +23,10 @@ interface Settings {
   startAmount: number;
 }
 
-interface DirtySettings extends Settings {
-  dailyBudget: number | string;
-  startAmount: number | string;
+interface DirtySettings {
+  startDate: Date;
+  dailyBudget: string;
+  startAmount: string;
 }
 
 function App() {
@@ -334,7 +335,11 @@ const SettingsEditor = ({
   settings: Settings;
   onUpdate: (settings: Settings) => void;
 }) => {
-  const [data, setData] = useState<Settings | DirtySettings>(settings);
+  const [data, setData] = useState<DirtySettings>({
+    ...settings,
+    dailyBudget: settings.dailyBudget.toFixed(2),
+    startAmount: settings.startAmount.toFixed(2),
+  });
   const [persisted, setPersisted] = useState(false);
   const [savingSettings, setSavingSettings] = useState(true);
 
@@ -391,7 +396,7 @@ const SettingsEditor = ({
         <label className="w-24 text-sm">start balance</label>
         <input
           placeholder="starting amount"
-          type="number"
+          type="text"
           disabled={savingSettings}
           className="flex-grow p-1 font-mono text-lg text-center border border-gray-400"
           value={data.startAmount}
