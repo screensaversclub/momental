@@ -23,6 +23,11 @@ interface Settings {
   startAmount: number;
 }
 
+interface DirtySettings extends Settings {
+  dailyBudget: number | string;
+  startAmount: number | string;
+}
+
 function App() {
   const dbRef = useRef<IDBPDatabase>();
   const [entries, setEntries] = useState<SpendEntry[]>([]);
@@ -157,7 +162,7 @@ function App() {
 
       <div
         id="ledger"
-        className="h-[50vh] w-full bg-white overflow-y-scroll no-scrollbar"
+        className="h-[50vh] w-full bg-white overflow-y-scroll no-scrollbar  [&>:nth-child(4n_+_1)]:bg-white [&>div]:bg-gray-50"
       >
         {entries
           .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
@@ -165,7 +170,7 @@ function App() {
             <Fragment key={entry.id}>
               <div
                 key={`entry_${entry.id}`}
-                className="flex items-center justify-between px-2 py-1 border-t"
+                className="flex items-center justify-between px-2 py-1"
               >
                 <span className="text-xs text-black/50 w-[6em]">
                   {format(entry.timestamp, "H:mm:ss a")}
@@ -203,32 +208,33 @@ function App() {
               </div>
               <div
                 className={`${
-                  arr?.[index + 1] !== undefined &&
-                  differenceInDays(
-                    startOfDay(entry.timestamp),
-                    startOfDay(arr[index + 1].timestamp)
-                  ) >= 1
+                  arr?.[index + 1] === undefined
+                    ? "block"
+                    : differenceInDays(
+                        startOfDay(entry.timestamp),
+                        startOfDay(arr[index + 1].timestamp)
+                      ) >= 1
                     ? "block"
                     : "hidden"
-                } sticky bottom-0 text-center bg-white text-gray-500 text-sm py-2 bg-gradient-to-t from-gray-50 to-white`}
+                } sticky bottom-0 text-center bg-white text-gray-500 text-xs py-2 bg-gradient-to-t from-gray-50 to-white border-b border-gray-200`}
                 style={{
                   zIndex:
                     daysSpanned - differenceInDays(firstDate, entry.timestamp),
                 }}
               >
-                {format(entry.timestamp, "dd MMM yyyy")}/
-                {differenceInDays(firstDate, entry.timestamp)}
+                {format(entry.timestamp, "dd MMM yyyy")}
               </div>
             </Fragment>
           ))}
       </div>
 
-      <div className="px-2 py-2 w-full h-[calc(50vh_-_60px)] border-t">
+      <div className="px-2 py-2 w-full h-[calc(50vh_-_60px)]">
         {editingSettings ? (
           settings === undefined ? (
             <>Loading</>
           ) : (
             <SettingsEditor
+              key={JSON.stringify(settings)}
               settings={settings}
               onUpdate={async (s) => {
                 if (dbRef.current === undefined) {
@@ -328,15 +334,30 @@ const SettingsEditor = ({
   settings: Settings;
   onUpdate: (settings: Settings) => void;
 }) => {
-  const [data, setData] = useState<Settings>(settings);
+  const [data, setData] = useState<Settings | DirtySettings>(settings);
   const [persisted, setPersisted] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(true);
 
   useEffect(() => {
     const id = setTimeout(() => {
-      onUpdate(data);
-    }, 500);
+      setSavingSettings(() => true);
+      onUpdate({
+        dailyBudget: isNaN(Number(data.dailyBudget))
+          ? 0
+          : Number(data.dailyBudget),
+        startAmount: isNaN(Number(data.startAmount))
+          ? 0
+          : Number(data.startAmount),
+        startDate: data.startDate,
+      });
+    }, 2000);
+
+    const id2 = setTimeout(() => {
+      setSavingSettings(() => false);
+    }, 2500);
     return () => {
       clearTimeout(id);
+      clearTimeout(id2);
     };
   }, [data]);
 
@@ -345,43 +366,55 @@ const SettingsEditor = ({
   }, []);
 
   return (
-    <div className="flex flex-col gap-2">
-      <div>
+    <div className="flex flex-col py-4 gap-2">
+      <div className="flex items-center w-full gap-2">
+        <label className="w-24 text-sm">daily budget</label>
         <input
           type="number"
           value={data.dailyBudget}
-          className="w-full p-1 text-lg text-center"
+          disabled={savingSettings}
+          className="flex-grow p-1 font-mono text-lg text-center border border-gray-400"
           placeholder="daily budget"
+          onFocus={(e) => {
+            e.target.value = "";
+          }}
           onChange={(e) => {
             setData((d) => ({
               ...d,
-              dailyBudget: Number(parseFloat(e.target.value).toFixed(2)),
+              dailyBudget: e.target.value,
             }));
           }}
         />
       </div>
 
-      <div>
+      <div className="flex items-center w-full gap-2">
+        <label className="w-24 text-sm">start balance</label>
         <input
           placeholder="starting amount"
           type="number"
-          className="w-full p-1 text-lg text-center"
+          disabled={savingSettings}
+          className="flex-grow p-1 font-mono text-lg text-center border border-gray-400"
           value={data.startAmount}
+          onFocus={(e) => {
+            e.target.value = "";
+          }}
           onChange={(e) => {
             setData((d) => ({
               ...d,
-              startAmount: Number(parseFloat(e.target.value).toFixed(2)),
+              startAmount: e.target.value,
             }));
           }}
         />
       </div>
       <div className="flex items-center gap-2">
-        <label>start date</label>
+        <label className="w-24 text-sm">start date</label>
         <input
           type="date"
-          value={data.startDate.toISOString().substring(0, 10)}
+          disabled={savingSettings}
+          value={format(data.startDate, "yyyy-MM-dd")}
           required={true}
-          className="flex-grow text-lg"
+          id="date_input"
+          className="flex-grow py-1 text-lg text-center bg-white border border-gray-400"
           onChange={(e) => {
             setData((d) => ({
               ...d,
@@ -391,21 +424,24 @@ const SettingsEditor = ({
         />
       </div>
 
-      <div className="text-sm text-center">
-        {differenceInDays(new Date(), settings?.startDate || new Date()) + 1}{" "}
-        days
-      </div>
-
       <div
-        className="p-1 text-sm text-center border rounded cursor-pointer border-text border-1"
+        className="p-1 mt-2 text-sm text-center text-gray-400 bg-white border rounded cursor-pointer border-text border-1"
         onClick={async () => {
           if (!persisted) {
-            await navigator.storage.persist();
+            const persistResult = await navigator.storage.persist();
+            if (persistResult) {
+              setPersisted(true);
+            }
           }
         }}
       >
-        {persisted ? "data persisted" : "request persistence"}
+        {persisted
+          ? "data persisted in browser"
+          : "request persistence in browser"}
       </div>
+      {savingSettings && (
+        <div className="mt-2 text-center text-gray-400">saving...</div>
+      )}
     </div>
   );
 };
