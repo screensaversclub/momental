@@ -109,7 +109,7 @@ function App() {
   }, []);
 
   return (
-    <main className="w-[100vw] overflow-hidden">
+    <main className="w-[100vw] overflow-hidden h-[100vh] fixed top-0 left-0">
       <div className="bg-[#14C31B] h-[40px] text-center text-white p-2 flex justify-center">
         <img src="/header-logo.png" alt="logo" className="w-8" />
       </div>
