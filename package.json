@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vercel/analytics": "^1.1.1",
     "autoprefixer": "^10.4.16",
     "date-fns": "^2.30.0",
     "idb": "^7.1.1",

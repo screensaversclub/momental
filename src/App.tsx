@@ -9,6 +9,7 @@ import {
 import { openDB, IDBPDatabase } from "idb";
 import { differenceInDays, format, startOfDay } from "date-fns";
 import { Tooltip } from "react-tooltip";
+import { Analytics } from "@vercel/analytics";
 
 interface SpendEntry {
   id: number;
@@ -133,6 +134,7 @@ function App() {
   return (
     <main className="w-[100vw] max-w-[600px] overflow-hidden h-[100vh] fixed top-0 left-[50%] translate-x-[-50%]">
       <div className="bg-[#14C31B] h-[60px] items-center text-white p-2 flex justify-center relative">
+        <Analytics />
         <img
           src="/header-logo.png"
           alt="logo"
