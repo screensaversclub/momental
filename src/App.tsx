@@ -143,10 +143,15 @@ function App() {
             result.anonymousId === undefined || result.anonymousId.length < 1
               ? nanoid()
               : result.anonymousId;
-          setSettings({
+
+          const normalizedSettings = {
             ...result,
             anonymousId: auid,
             startDate: startOfDay(result.startDate),
+          };
+
+          settingsStore.put(normalizedSettings, "settings").then(() => {
+            setSettings(normalizedSettings);
           });
 
           plausible.trackEvent(
