@@ -10,6 +10,8 @@ import { openDB, IDBPDatabase } from "idb";
 import { differenceInDays, format, startOfDay } from "date-fns";
 import { Tooltip } from "react-tooltip";
 import { Analytics } from "@vercel/analytics/react";
+import Plausible from "plausible-tracker";
+import { nanoid } from "nanoid";
 
 interface SpendEntry {
   id: number;
@@ -19,16 +21,22 @@ interface SpendEntry {
 }
 
 interface Settings {
+  anonymousId: string;
   dailyBudget: number;
   startDate: Date;
   startAmount: number;
 }
 
 interface DirtySettings {
+  anonymousId: string;
   startDate: Date;
   dailyBudget: string;
   startAmount: string;
 }
+
+const plausible = Plausible({
+  domain: "momentalapp.com",
+});
 
 function App() {
   const dbRef = useRef<IDBPDatabase>();
@@ -117,15 +125,27 @@ function App() {
         if (result === undefined) {
           // init settings
           const initSettings = {
+            anonymousId: nanoid(),
             startAmount: 0,
             startDate: startOfDay(new Date()),
             dailyBudget: 40,
           };
+          plausible.trackEvent(
+            "init-app",
+            { props: { auid: initSettings.anonymousId } },
+            { trackLocalhost: false }
+          );
           settingsStore.add(initSettings, "settings").then(() => {
             setSettings(initSettings);
           });
         } else {
           setSettings({ ...result, startDate: startOfDay(result.startDate) });
+
+          plausible.trackEvent(
+            "launch-app",
+            { props: { auid: result.anonymousId } },
+            { trackLocalhost: false }
+          );
         }
       });
     });
@@ -263,6 +283,16 @@ function App() {
                 const store = tx.objectStore("entries");
                 await store.add(entry);
                 await loadEntries();
+
+                if (settings === undefined) {
+                  return;
+                }
+
+                plausible.trackEvent(
+                  "enter-spend",
+                  { props: { auid: settings.anonymousId } },
+                  { trackLocalhost: false }
+                );
               }}
             />
           </div>
