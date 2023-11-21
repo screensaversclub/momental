@@ -379,6 +379,7 @@ const SettingsEditor = ({
     const id = setTimeout(() => {
       setSavingSettings(() => true);
       onUpdate({
+        anonymousId: data.anonymousId,
         dailyBudget: isNaN(Number(data.dailyBudget))
           ? 0
           : Number(data.dailyBudget),
