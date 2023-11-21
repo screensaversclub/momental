@@ -321,6 +321,7 @@ const EntryEditor = ({
         aria-label="spend amount"
         placeholder="Spend amount"
         className="p-1 font-mono text-lg text-center border border-gray-400"
+        inputMode="decimal"
         onFocus={(e) => {
           e.target.value = "";
         }}
@@ -408,8 +409,9 @@ const SettingsEditor = ({
       <div className="flex items-center w-full gap-2">
         <label className="w-24 text-sm">daily budget</label>
         <input
-          type="number"
+          type="text"
           value={data.dailyBudget}
+          inputMode="decimal"
           disabled={savingSettings}
           className="flex-grow p-1 font-mono text-lg text-center border border-gray-400"
           placeholder="daily budget"
@@ -433,6 +435,7 @@ const SettingsEditor = ({
           disabled={savingSettings}
           className="flex-grow p-1 font-mono text-lg text-center border border-gray-400"
           value={data.startAmount}
+          inputMode="decimal"
           onFocus={(e) => {
             e.target.value = "";
           }}
