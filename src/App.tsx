@@ -139,7 +139,15 @@ function App() {
             setSettings(initSettings);
           });
         } else {
-          setSettings({ ...result, startDate: startOfDay(result.startDate) });
+          const auid =
+            result.anonymousId === undefined || result.anonymousId.length < 1
+              ? nanoid()
+              : result.anonymousId;
+          setSettings({
+            ...result,
+            anonymousId: auid,
+            startDate: startOfDay(result.startDate),
+          });
 
           plausible.trackEvent(
             "launch-app",
