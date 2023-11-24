@@ -496,6 +496,7 @@ const SettingsEditor = ({
       {savingSettings && (
         <div className="mt-2 text-center text-gray-400">saving...</div>
       )}
+			<div className='mt-2 text-center text-gray-400'>Feedback? <a href='mailto:i@siah.sg'>Email me</a>. </div>
     </div>
   );
 };
