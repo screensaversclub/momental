@@ -417,6 +417,48 @@ const SettingsEditor = ({
     navigator.storage.persisted().then((v) => setPersisted(v));
   }, []);
 
+  const resetWallet = useCallback(async () => {
+    const db = await openDB("testdb", 1, {
+      upgrade(database) {
+        if (!database.objectStoreNames.contains("entries")) {
+          return;
+        }
+
+        if (!database.objectStoreNames.contains("settings")) {
+          return;
+        }
+      },
+    });
+
+    const tx = db.transaction("entries", "readwrite");
+    const store = tx.objectStore("entries");
+    const entryKeys = await store.getAllKeys();
+
+    await Promise.all(
+      entryKeys.map((key) => {
+        return store.delete(key);
+      })
+    );
+
+    const txSettings = db.transaction("settings", "readwrite");
+    const storeSettings = txSettings.objectStore("settings");
+
+    const key = await storeSettings.getAllKeys();
+    const settingsNow: Settings = await storeSettings.get(key[0]);
+
+    if (settingsNow?.anonymousId !== undefined) {
+      const newSettings: Settings = {
+        ...settingsNow,
+        startDate: new Date(),
+        startAmount: 0,
+      };
+
+      await storeSettings.put(newSettings, key[0]);
+    }
+
+    storeSettings.put;
+  }, []);
+
   return (
     <div className="flex flex-col py-4 gap-2">
       <div className="flex items-center w-full gap-2">
@@ -478,25 +520,39 @@ const SettingsEditor = ({
         />
       </div>
 
-      <div
-        className="p-1 mt-2 text-sm text-center text-gray-400 bg-white border rounded cursor-pointer border-text border-1"
-        onClick={async () => {
-          if (!persisted) {
-            const persistResult = await navigator.storage.persist();
-            if (persistResult) {
-              setPersisted(true);
+      <div className="flex justify-center mt-2 gap-3 ">
+        <button
+          className="px-2 py-1 text-sm text-center text-gray-400 bg-white border rounded cursor-pointer border-text border-1"
+          onClick={async () => {
+            if (!persisted) {
+              const persistResult = await navigator.storage.persist();
+              if (persistResult) {
+                setPersisted(true);
+              }
             }
-          }
-        }}
-      >
-        {persisted
-          ? "data persisted in browser"
-          : "request persistence in browser"}
+          }}
+        >
+          {persisted
+            ? "data persisted in browser"
+            : "request persistence in browser"}
+        </button>
+        <button
+          className="px-2 py-1 text-sm text-center text-gray-400 bg-white border rounded cursor-pointer border-text border-1"
+          onClick={async () => {
+            if (confirm("Delete all records and start tracking from today?")) {
+              await resetWallet();
+            }
+          }}
+        >
+          reset wallet
+        </button>
       </div>
       {savingSettings && (
         <div className="mt-2 text-center text-gray-400">saving...</div>
       )}
-			<div className='mt-2 text-center text-gray-400'>Feedback? <a href='mailto:i@siah.sg'>Email me</a>. </div>
+      <div className="mt-2 text-center text-gray-400">
+        Feedback? <a href="mailto:i@siah.sg">Email me</a>.{" "}
+      </div>
     </div>
   );
 };
