@@ -281,6 +281,7 @@ function App() {
                 const store = tx.objectStore("settings");
                 await store.put(s, "settings");
                 await loadSettings();
+                await loadEntries();
               }}
             />
           )
@@ -447,13 +448,14 @@ const SettingsEditor = ({
     const settingsNow: Settings = await storeSettings.get(key[0]);
 
     if (settingsNow?.anonymousId !== undefined) {
-      const newSettings: Settings = {
+      const newSettings: DirtySettings = {
         ...settingsNow,
+        dailyBudget: settingsNow.dailyBudget.toString(),
         startDate: new Date(),
-        startAmount: 0,
+        startAmount: "0",
       };
 
-      await storeSettings.put(newSettings, key[0]);
+      setData(() => newSettings);
     }
 
     storeSettings.put;
