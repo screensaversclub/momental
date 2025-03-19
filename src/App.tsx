@@ -10,7 +10,6 @@ import { openDB, IDBPDatabase } from "idb";
 import { differenceInDays, format, startOfDay } from "date-fns";
 import { Tooltip } from "react-tooltip";
 import { Analytics } from "@vercel/analytics/react";
-import Plausible from "plausible-tracker";
 import { nanoid } from "nanoid";
 
 interface SpendEntry {
@@ -33,10 +32,6 @@ interface DirtySettings {
   dailyBudget: string;
   startAmount: string;
 }
-
-const plausible = Plausible({
-  domain: "momentalapp.com",
-});
 
 function App() {
   const dbRef = useRef<IDBPDatabase>();
@@ -130,11 +125,16 @@ function App() {
             startDate: startOfDay(new Date()),
             dailyBudget: 40,
           };
+
+          // @ts-expect-error -- window global object
+          window?.datafast("init-app", { auid: settings.anonymousId });
+          /*
           plausible.trackEvent(
             "init-app",
             { props: { auid: initSettings.anonymousId } },
             { trackLocalhost: false }
           );
+					 */
           settingsStore.add(initSettings, "settings").then(() => {
             setSettings(initSettings);
           });
@@ -154,11 +154,15 @@ function App() {
             setSettings(normalizedSettings);
           });
 
+          // @ts-expect-error -- window global object
+          window?.datafast("launch-app", { auid: settings.anonymousId });
+          /*
           plausible.trackEvent(
             "launch-app",
             { props: { auid: result.anonymousId } },
             { trackLocalhost: false }
           );
+					 */
         }
       });
     });
@@ -302,16 +306,26 @@ function App() {
                   return;
                 }
 
+                // @ts-expect-error -- window global object
+                window?.datafast("enter-spend", { auid: settings.anonymousId });
+                /*
                 plausible.trackEvent(
                   "enter-spend",
                   { props: { auid: settings.anonymousId } },
                   { trackLocalhost: false }
                 );
+									 */
               }}
             />
           </div>
         )}
       </div>
+      <script
+        defer
+        data-website-id="67da47e623e061a9788ab1c8"
+        data-domain="app.momentalapp.com"
+        src="https://datafa.st/js/script.js"
+      ></script>
     </main>
   );
 }
