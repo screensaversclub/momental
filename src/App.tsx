@@ -320,12 +320,6 @@ function App() {
           </div>
         )}
       </div>
-      <script
-        defer
-        data-website-id="67da47e623e061a9788ab1c8"
-        data-domain="app.momentalapp.com"
-        src="https://datafa.st/js/script.js"
-      ></script>
     </main>
   );
 }
